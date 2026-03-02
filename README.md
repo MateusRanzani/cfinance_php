@@ -1,4 +1,4 @@
-# Sistema de Financas de Casal (PHP + MySQL + MVC + Tailwind)
+# Sistema de Financas (PHP + MySQL + MVC + Tailwind)
 
 ## Requisitos
 - PHP 8.1+
