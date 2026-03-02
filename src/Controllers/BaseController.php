@@ -43,7 +43,7 @@ abstract class BaseController
         $session = (string) ($_SESSION['csrf'] ?? '');
 
         if ($token === '' || $session === '' || !hash_equals($session, $token)) {
-            throw new \RuntimeException('Invalid CSRF token.');
+            throw new \RuntimeException('Token CSRF invalido.');
         }
     }
 
@@ -78,4 +78,3 @@ abstract class BaseController
         return (int) $currentUser['id'];
     }
 }
-

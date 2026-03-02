@@ -28,7 +28,7 @@ final class AuthController extends BaseController
         $password = (string) ($_POST['password'] ?? '');
 
         if (!$this->auth->login($email, $password)) {
-            $this->flash('error', 'Invalid email or password.');
+            $this->flash('error', 'E-mail ou senha invalidos.');
             $this->redirect('/login');
         }
 
@@ -42,4 +42,3 @@ final class AuthController extends BaseController
         $this->redirect('/login');
     }
 }
-

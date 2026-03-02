@@ -12,7 +12,8 @@ final class UserController extends BaseController
         $this->auth->requireAdmin($user);
 
         $this->render('users/index', [
-            'title' => 'Users',
+            'title' => 'Usuarios',
+            'activeMenu' => 'users',
             'admin' => $user,
             'users' => $this->auth->listUsers(),
             'flash' => $this->consumeFlash(),
@@ -33,7 +34,7 @@ final class UserController extends BaseController
                 (string) ($_POST['password'] ?? ''),
                 (string) ($_POST['role'] ?? 'padrao')
             );
-            $this->flash('success', 'User created.');
+            $this->flash('success', 'Usuario criado.');
         } catch (\Throwable $exception) {
             $this->flash('error', $exception->getMessage());
         }
@@ -53,7 +54,30 @@ final class UserController extends BaseController
                 (int) ($_POST['user_id'] ?? 0),
                 (string) ($_POST['role'] ?? 'padrao')
             );
-            $this->flash('success', 'Role updated.');
+            $this->flash('success', 'Perfil atualizado.');
+        } catch (\Throwable $exception) {
+            $this->flash('error', $exception->getMessage());
+        }
+
+        $this->redirect('/users');
+    }
+
+    public function update(): void
+    {
+        $this->verifyCsrf();
+        $user = $this->requireLogin();
+        $this->auth->requireAdmin($user);
+
+        try {
+            $this->auth->updateUser(
+                $user,
+                (int) ($_POST['user_id'] ?? 0),
+                (string) ($_POST['name'] ?? ''),
+                (string) ($_POST['email'] ?? ''),
+                (string) ($_POST['role'] ?? 'padrao'),
+                (string) ($_POST['password'] ?? '')
+            );
+            $this->flash('success', 'Usuario atualizado.');
         } catch (\Throwable $exception) {
             $this->flash('error', $exception->getMessage());
         }
@@ -69,7 +93,7 @@ final class UserController extends BaseController
 
         try {
             $this->auth->deleteUser($user, (int) ($_POST['user_id'] ?? 0));
-            $this->flash('success', 'User removed.');
+            $this->flash('success', 'Usuario removido.');
         } catch (\Throwable $exception) {
             $this->flash('error', $exception->getMessage());
         }
@@ -77,4 +101,3 @@ final class UserController extends BaseController
         $this->redirect('/users');
     }
 }
-

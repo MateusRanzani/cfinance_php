@@ -81,11 +81,11 @@ final class AuthService
     public function createUser(string $name, string $email, string $password, string $role): void
     {
         if ($name === '' || $email === '' || $password === '') {
-            throw new \RuntimeException('Nome, e-mail e senha são obrigatórios.');
+            throw new \RuntimeException('Nome, e-mail e senha sao obrigatorios.');
         }
 
         if (!in_array($role, ['admin', 'padrao'], true)) {
-            throw new \RuntimeException('Perfil inválido.');
+            throw new \RuntimeException('Perfil invalido.');
         }
 
         $query = $this->db->prepare(
@@ -102,21 +102,70 @@ final class AuthService
     public function updateUserRole(array $actor, int $targetUserId, string $role): void
     {
         if (!in_array($role, ['admin', 'padrao'], true)) {
-            throw new \RuntimeException('Perfil inválido.');
+            throw new \RuntimeException('Perfil invalido.');
         }
 
         if ((int) $actor['id'] === $targetUserId && $role !== 'admin') {
-            throw new \RuntimeException('Você não pode remover seu próprio privilégio de admin.');
+            throw new \RuntimeException('Voce nao pode remover seu proprio privilegio de admin.');
         }
 
         $query = $this->db->prepare('UPDATE users SET role = :role WHERE id = :id');
         $query->execute(['role' => $role, 'id' => $targetUserId]);
     }
 
+    public function updateUser(array $actor, int $targetUserId, string $name, string $email, string $role, string $password = ''): void
+    {
+        if ($targetUserId <= 0) {
+            throw new \RuntimeException('Usuario invalido.');
+        }
+
+        $name = trim($name);
+        $email = trim($email);
+        if ($name === '' || $email === '') {
+            throw new \RuntimeException('Nome e e-mail sao obrigatorios.');
+        }
+
+        if (!in_array($role, ['admin', 'padrao'], true)) {
+            throw new \RuntimeException('Perfil invalido.');
+        }
+
+        if ((int) $actor['id'] === $targetUserId && $role !== 'admin') {
+            throw new \RuntimeException('Voce nao pode remover seu proprio privilegio de admin.');
+        }
+
+        if ($password !== '') {
+            $query = $this->db->prepare(
+                'UPDATE users
+                 SET name = :name, email = :email, role = :role, password_hash = :password_hash
+                 WHERE id = :id'
+            );
+            $query->execute([
+                'id' => $targetUserId,
+                'name' => $name,
+                'email' => $email,
+                'role' => $role,
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            ]);
+            return;
+        }
+
+        $query = $this->db->prepare(
+            'UPDATE users
+             SET name = :name, email = :email, role = :role
+             WHERE id = :id'
+        );
+        $query->execute([
+            'id' => $targetUserId,
+            'name' => $name,
+            'email' => $email,
+            'role' => $role,
+        ]);
+    }
+
     public function deleteUser(array $actor, int $targetUserId): void
     {
         if ((int) $actor['id'] === $targetUserId) {
-            throw new \RuntimeException('Você não pode excluir seu próprio usuário.');
+            throw new \RuntimeException('Voce nao pode excluir seu proprio usuario.');
         }
 
         $query = $this->db->prepare('DELETE FROM users WHERE id = :id');

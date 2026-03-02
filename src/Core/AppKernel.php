@@ -47,13 +47,32 @@ final class AppKernel
         $this->router->post('/logout', [$authController, 'logout']);
 
         $this->router->get('/dashboard', [$dashboardController, 'index']);
-        $this->router->post('/budget/save', [$dashboardController, 'saveBudget']);
-        $this->router->post('/entry/add', [$dashboardController, 'addEntry']);
-        $this->router->post('/entry/update', [$dashboardController, 'updateEntry']);
-        $this->router->post('/entry/delete', [$dashboardController, 'deleteEntry']);
+        $this->router->get('/rendas', [$dashboardController, 'incomesPage']);
+        $this->router->get('/despesas', [$dashboardController, 'expensesPage']);
+        $this->router->get('/tipos', [$dashboardController, 'typesPage']);
+
+        $this->router->post('/rendas/add', [$dashboardController, 'addIncome']);
+        $this->router->post('/rendas/update', [$dashboardController, 'updateIncome']);
+        $this->router->post('/rendas/delete', [$dashboardController, 'deleteIncome']);
+
+        $this->router->post('/despesas/add', [$dashboardController, 'addExpense']);
+        $this->router->post('/despesas/update', [$dashboardController, 'updateExpense']);
+        $this->router->post('/despesas/delete', [$dashboardController, 'deleteExpense']);
+
+        $this->router->post('/mes/copiar-anterior', [$dashboardController, 'copyPreviousMonth']);
+
+        $this->router->post('/fixos/rendas/add', [$dashboardController, 'addFixedIncome']);
+        $this->router->post('/fixos/rendas/delete', [$dashboardController, 'deleteFixedIncome']);
+        $this->router->post('/fixos/despesas/add', [$dashboardController, 'addFixedExpense']);
+        $this->router->post('/fixos/despesas/delete', [$dashboardController, 'deleteFixedExpense']);
+        $this->router->post('/fixos/aplicar', [$dashboardController, 'applyFixed']);
+        $this->router->post('/tipos/add', [$dashboardController, 'addType']);
+        $this->router->post('/tipos/update', [$dashboardController, 'updateType']);
+        $this->router->post('/tipos/delete', [$dashboardController, 'deleteType']);
 
         $this->router->get('/users', [$userController, 'index']);
         $this->router->post('/users/create', [$userController, 'create']);
+        $this->router->post('/users/update', [$userController, 'update']);
         $this->router->post('/users/update-role', [$userController, 'updateRole']);
         $this->router->post('/users/delete', [$userController, 'delete']);
     }
@@ -67,14 +86,14 @@ final class AppKernel
         } catch (PDOException) {
             http_response_code(500);
             echo View::render('errors/generic', [
-                'title' => 'Database Error',
-                'message' => 'Could not connect to MySQL. Check config/config.php.',
+                'title' => 'Erro de banco',
+                'message' => 'Falha ao conectar no MySQL. Revise config/config.php.',
                 'basePath' => $this->basePath,
             ]);
         } catch (\Throwable $exception) {
             http_response_code(500);
             echo View::render('errors/generic', [
-                'title' => 'Internal Error',
+                'title' => 'Erro interno',
                 'message' => $exception->getMessage(),
                 'basePath' => $this->basePath,
             ]);
@@ -97,4 +116,3 @@ final class AppKernel
         return $uriPath;
     }
 }
-

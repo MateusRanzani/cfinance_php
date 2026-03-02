@@ -7,7 +7,7 @@
 
 ## Configuracao
 1. Configure as credenciais em `.env`.
-2. Crie banco e tabelas:
+2. Crie o banco e as tabelas:
 
 ```bash
 mysql -u root -p < database/schema.sql
@@ -31,12 +31,29 @@ composer run serve
 - E-mail: `admin@casal.com`
 - Senha: `admin123`
 
-## Estrutura MVC
-- `src/Core`: kernel, roteador e engine de views.
-- `src/Controllers`: controllers de autenticacao, dashboard e usuarios.
-- `src`: servicos de dominio e acesso a dados.
-- `views`: templates PHP por modulo com layout compartilhado.
+## Modelo de dados
+- Sem tabela de mes.
+- O mes e identificado por `MONTH(data_referencia)` e `YEAR(data_referencia)`.
+- Tabelas principais:
+  - `rendas`
+  - `despesas`
+  - `rendas_fixas`
+  - `despesas_fixas`
+  - `tipos_movimentacao`
 
-## Tailwind
-- O layout principal (`views/layouts/app.php`) carrega Tailwind via CDN.
+## Funcionalidades
+- Filtro mensal por meses disponiveis.
+- Totais planejados e reais para rendas e despesas.
+- Diferenca por linha (`planejado - real`) e diferenca total do mes.
+- Saldo final: `rendas_reais - despesas_reais`.
+- Copiar estrutura do mes anterior quando o mes atual estiver vazio.
+- Aplicar rendas/despesas fixas no mes para evitar recriacao manual.
+- Cadastro de tipos de movimentacao (ex.: salario, venda, cartao, aluguel) na aba `Tipos`.
+- Vinculacao de tipo obrigatoria em rendas e despesas (normais e fixas).
 
+## Atualizando banco ja existente
+Se voce ja tinha o banco criado antes dessa funcionalidade, rode novamente:
+
+```bash
+mysql -u root -p < database/schema.sql
+```
