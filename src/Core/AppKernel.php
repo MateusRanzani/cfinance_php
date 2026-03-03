@@ -84,10 +84,13 @@ final class AppKernel
             $path = $this->resolvePath();
             $this->router->dispatch($method, $path);
         } catch (PDOException) {
+            $isDebug = filter_var((string) ($_ENV['APP_DEBUG'] ?? 'false'), FILTER_VALIDATE_BOOLEAN);
             http_response_code(500);
             echo View::render('errors/generic', [
                 'title' => 'Erro de banco',
-                'message' => 'Falha ao conectar no MySQL. Revise config/config.php.',
+                'message' => $isDebug
+                    ? 'Falha ao conectar no MySQL. Revise config/config.php e .env.'
+                    : 'Falha ao conectar no MySQL. Revise config/config.php.',
                 'basePath' => $this->basePath,
             ]);
         } catch (\Throwable $exception) {

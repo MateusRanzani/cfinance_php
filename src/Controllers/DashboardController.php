@@ -8,8 +8,8 @@ final class DashboardController extends BaseController
 {
     public function index(): void
     {
-        [$user, $targetUserId, $year, $month, $selectedMonth] = $this->resolveContextFromRequest();
-        $dashboard = $this->finance->buildDashboardData($user, $targetUserId, $year, $month);
+        [$user, $targetUserId, $year, $month, $selectedMonth, $startDate, $endDate] = $this->resolveContextFromRequest();
+        $dashboard = $this->finance->buildDashboardData($user, $targetUserId, $year, $month, $startDate, $endDate);
 
         $this->render('dashboard/index', [
             'title' => 'Dashboard',
@@ -19,6 +19,8 @@ final class DashboardController extends BaseController
             'year' => $year,
             'month' => $month,
             'mesSelecionado' => $selectedMonth,
+            'dataInicioSelecionada' => $startDate ?? '',
+            'dataFimSelecionada' => $endDate ?? '',
             'users' => ($user['role'] ?? '') === 'admin' ? $this->auth->listUsers() : [],
             'flash' => $this->consumeFlash(),
             'csrf' => $this->csrfToken(),
@@ -32,8 +34,8 @@ final class DashboardController extends BaseController
 
     public function incomesPage(): void
     {
-        [$user, $targetUserId, $year, $month, $selectedMonth] = $this->resolveContextFromRequest();
-        $dashboard = $this->finance->buildDashboardData($user, $targetUserId, $year, $month);
+        [$user, $targetUserId, $year, $month, $selectedMonth, $startDate, $endDate] = $this->resolveContextFromRequest();
+        $dashboard = $this->finance->buildDashboardData($user, $targetUserId, $year, $month, $startDate, $endDate);
 
         $this->render('rendas/index', [
             'title' => 'Rendas',
@@ -41,6 +43,8 @@ final class DashboardController extends BaseController
             'user' => $user,
             'targetUserId' => $targetUserId,
             'mesSelecionado' => $selectedMonth,
+            'dataInicioSelecionada' => $startDate ?? '',
+            'dataFimSelecionada' => $endDate ?? '',
             'users' => ($user['role'] ?? '') === 'admin' ? $this->auth->listUsers() : [],
             'flash' => $this->consumeFlash(),
             'csrf' => $this->csrfToken(),
@@ -53,8 +57,8 @@ final class DashboardController extends BaseController
 
     public function expensesPage(): void
     {
-        [$user, $targetUserId, $year, $month, $selectedMonth] = $this->resolveContextFromRequest();
-        $dashboard = $this->finance->buildDashboardData($user, $targetUserId, $year, $month);
+        [$user, $targetUserId, $year, $month, $selectedMonth, $startDate, $endDate] = $this->resolveContextFromRequest();
+        $dashboard = $this->finance->buildDashboardData($user, $targetUserId, $year, $month, $startDate, $endDate);
 
         $this->render('despesas/index', [
             'title' => 'Despesas',
@@ -62,6 +66,8 @@ final class DashboardController extends BaseController
             'user' => $user,
             'targetUserId' => $targetUserId,
             'mesSelecionado' => $selectedMonth,
+            'dataInicioSelecionada' => $startDate ?? '',
+            'dataFimSelecionada' => $endDate ?? '',
             'users' => ($user['role'] ?? '') === 'admin' ? $this->auth->listUsers() : [],
             'flash' => $this->consumeFlash(),
             'csrf' => $this->csrfToken(),
@@ -91,7 +97,7 @@ final class DashboardController extends BaseController
     public function addIncome(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->createIncome($user, $targetUserId, [
@@ -106,13 +112,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function updateIncome(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->updateIncome($user, (int) ($_POST['id'] ?? 0), [
@@ -127,13 +133,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function deleteIncome(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->deleteIncome($user, (int) ($_POST['id'] ?? 0));
@@ -142,13 +148,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function addExpense(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->createExpense($user, $targetUserId, [
@@ -163,13 +169,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function updateExpense(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->updateExpense($user, (int) ($_POST['id'] ?? 0), [
@@ -184,13 +190,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function deleteExpense(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->deleteExpense($user, (int) ($_POST['id'] ?? 0));
@@ -199,13 +205,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function copyPreviousMonth(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $result = $this->finance->copyPreviousMonthStructure($user, $targetUserId, $year, $month);
@@ -214,13 +220,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'dashboard'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'dashboard'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function addFixedIncome(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->createFixedIncome($user, $targetUserId, [
@@ -229,19 +235,21 @@ final class DashboardController extends BaseController
                 'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
                 'valor_real' => (float) ($_POST['valor_real'] ?? 0),
                 'dia_referencia' => (int) ($_POST['dia_referencia'] ?? 1),
+                'inicio_vigencia' => (string) ($_POST['inicio_vigencia'] ?? ''),
+                'fim_vigencia' => (string) ($_POST['fim_vigencia'] ?? ''),
             ]);
             $this->flash('success', 'Renda fixa cadastrada.');
         } catch (\Throwable $exception) {
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function deleteFixedIncome(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->deleteFixedIncome($user, (int) ($_POST['id'] ?? 0));
@@ -250,13 +258,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'rendas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function addFixedExpense(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->createFixedExpense($user, $targetUserId, [
@@ -265,19 +273,21 @@ final class DashboardController extends BaseController
                 'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
                 'valor_real' => (float) ($_POST['valor_real'] ?? 0),
                 'dia_referencia' => (int) ($_POST['dia_referencia'] ?? 1),
+                'inicio_vigencia' => (string) ($_POST['inicio_vigencia'] ?? ''),
+                'fim_vigencia' => (string) ($_POST['fim_vigencia'] ?? ''),
             ]);
             $this->flash('success', 'Despesa fixa cadastrada.');
         } catch (\Throwable $exception) {
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function deleteFixedExpense(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $this->finance->deleteFixedExpense($user, (int) ($_POST['id'] ?? 0));
@@ -286,13 +296,13 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'despesas'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function applyFixed(): void
     {
         $this->verifyCsrf();
-        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+        [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
             $result = $this->finance->applyFixedForMonth($user, $targetUserId, $year, $month);
@@ -301,7 +311,7 @@ final class DashboardController extends BaseController
             $this->flash('error', $exception->getMessage());
         }
 
-        $this->redirectByDestination((string) ($_POST['destino'] ?? 'dashboard'), $year, $month, $targetUserId);
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'dashboard'), $year, $month, $targetUserId, $startDate, $endDate);
     }
 
     public function addType(): void
@@ -360,8 +370,14 @@ final class DashboardController extends BaseController
         $user = $this->requireLogin();
         $targetUserId = (int) $user['id'];
         [$year, $month] = $this->resolveYearMonth((string) ($_GET['mes'] ?? date('Y-m')));
+        $startDate = $this->resolveDateFilter((string) ($_GET['data_inicio'] ?? ''));
+        $endDate = $this->resolveDateFilter((string) ($_GET['data_fim'] ?? ''));
 
-        return [$user, $targetUserId, $year, $month, sprintf('%04d-%02d', $year, $month)];
+        if ($startDate !== null && $endDate !== null && $startDate > $endDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        return [$user, $targetUserId, $year, $month, sprintf('%04d-%02d', $year, $month), $startDate, $endDate];
     }
 
     private function resolveContextFromPost(): array
@@ -369,8 +385,14 @@ final class DashboardController extends BaseController
         $user = $this->requireLogin();
         $targetUserId = (int) $user['id'];
         [$year, $month] = $this->resolveYearMonth((string) ($_POST['mes'] ?? date('Y-m')));
+        $startDate = $this->resolveDateFilter((string) ($_POST['data_inicio'] ?? ''));
+        $endDate = $this->resolveDateFilter((string) ($_POST['data_fim'] ?? ''));
 
-        return [$user, $targetUserId, $year, $month];
+        if ($startDate !== null && $endDate !== null && $startDate > $endDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        return [$user, $targetUserId, $year, $month, $startDate, $endDate];
     }
 
     private function resolveYearMonth(string $yearMonth): array
@@ -387,7 +409,7 @@ final class DashboardController extends BaseController
         return [$year, $month];
     }
 
-    private function redirectByDestination(string $destination, int $year, int $month, int $userId): never
+    private function redirectByDestination(string $destination, int $year, int $month, int $userId, ?string $startDate = null, ?string $endDate = null): never
     {
         $path = '/dashboard';
         if ($destination === 'rendas') {
@@ -396,6 +418,27 @@ final class DashboardController extends BaseController
             $path = '/despesas';
         }
 
-        $this->redirect($path . '?mes=' . sprintf('%04d-%02d', $year, $month));
+        $query = '?mes=' . sprintf('%04d-%02d', $year, $month);
+        if ($startDate !== null && $startDate !== '') {
+            $query .= '&data_inicio=' . urlencode($startDate);
+        }
+        if ($endDate !== null && $endDate !== '') {
+            $query .= '&data_fim=' . urlencode($endDate);
+        }
+        $this->redirect($path . $query);
+    }
+
+    private function resolveDateFilter(string $date): ?string
+    {
+        if (preg_match('/^\d{4}\-\d{2}\-\d{2}$/', $date) !== 1) {
+            return null;
+        }
+
+        $d = \DateTimeImmutable::createFromFormat('Y-m-d', $date);
+        if (!$d || $d->format('Y-m-d') !== $date) {
+            return null;
+        }
+
+        return $date;
     }
 }

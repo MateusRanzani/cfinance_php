@@ -48,8 +48,9 @@ composer run serve
 - Saldo final: `rendas_reais - despesas_reais`.
 - Copiar estrutura do mes anterior quando o mes atual estiver vazio.
 - Aplicar rendas/despesas fixas no mes para evitar recriacao manual.
+- Vigencia em fixos mensais com `inicio_vigencia` e `fim_vigencia` (opcional).
 - Cadastro de tipos de movimentacao (ex.: salario, venda, cartao, aluguel) na aba `Tipos`.
-- Vinculacao de tipo obrigatoria em rendas e despesas (normais e fixas).
+- Vinculacao de tipo opcional em rendas e despesas (normais e fixas).
 
 ## Atualizando banco ja existente
 Se voce ja tinha o banco criado antes dessa funcionalidade, rode novamente:

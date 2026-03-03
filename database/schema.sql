@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS rendas_fixas (
     valor_real DECIMAL(12,2) NOT NULL DEFAULT 0,
     tipo_id INT UNSIGNED NULL,
     dia_referencia TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    inicio_vigencia DATE NOT NULL DEFAULT '2000-01-01',
+    fim_vigencia DATE NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_rendas_fixas_tipo (tipo_id),
@@ -76,6 +78,8 @@ CREATE TABLE IF NOT EXISTS despesas_fixas (
     valor_real DECIMAL(12,2) NOT NULL DEFAULT 0,
     tipo_id INT UNSIGNED NULL,
     dia_referencia TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    inicio_vigencia DATE NOT NULL DEFAULT '2000-01-01',
+    fim_vigencia DATE NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_despesas_fixas_tipo (tipo_id),
@@ -84,10 +88,117 @@ CREATE TABLE IF NOT EXISTS despesas_fixas (
 ) ENGINE=InnoDB;
 
 -- Compatibilidade para bancos ja existentes
-ALTER TABLE rendas ADD COLUMN IF NOT EXISTS tipo_id INT UNSIGNED NULL AFTER usuario_id;
-ALTER TABLE despesas ADD COLUMN IF NOT EXISTS tipo_id INT UNSIGNED NULL AFTER usuario_id;
-ALTER TABLE rendas_fixas ADD COLUMN IF NOT EXISTS tipo_id INT UNSIGNED NULL AFTER valor_real;
-ALTER TABLE despesas_fixas ADD COLUMN IF NOT EXISTS tipo_id INT UNSIGNED NULL AFTER valor_real;
+SET @col_rendas_tipo_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'rendas'
+      AND COLUMN_NAME = 'tipo_id'
+);
+SET @sql := IF(@col_rendas_tipo_exists = 0,
+    'ALTER TABLE rendas ADD COLUMN tipo_id INT UNSIGNED NULL AFTER usuario_id',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_despesas_tipo_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'despesas'
+      AND COLUMN_NAME = 'tipo_id'
+);
+SET @sql := IF(@col_despesas_tipo_exists = 0,
+    'ALTER TABLE despesas ADD COLUMN tipo_id INT UNSIGNED NULL AFTER usuario_id',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_rendas_fixas_tipo_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'rendas_fixas'
+      AND COLUMN_NAME = 'tipo_id'
+);
+SET @sql := IF(@col_rendas_fixas_tipo_exists = 0,
+    'ALTER TABLE rendas_fixas ADD COLUMN tipo_id INT UNSIGNED NULL AFTER valor_real',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_despesas_fixas_tipo_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'despesas_fixas'
+      AND COLUMN_NAME = 'tipo_id'
+);
+SET @sql := IF(@col_despesas_fixas_tipo_exists = 0,
+    'ALTER TABLE despesas_fixas ADD COLUMN tipo_id INT UNSIGNED NULL AFTER valor_real',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_rendas_fixas_inicio_vigencia_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'rendas_fixas'
+      AND COLUMN_NAME = 'inicio_vigencia'
+);
+SET @sql := IF(@col_rendas_fixas_inicio_vigencia_exists = 0,
+    'ALTER TABLE rendas_fixas ADD COLUMN inicio_vigencia DATE NOT NULL DEFAULT ''2000-01-01'' AFTER dia_referencia',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_rendas_fixas_fim_vigencia_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'rendas_fixas'
+      AND COLUMN_NAME = 'fim_vigencia'
+);
+SET @sql := IF(@col_rendas_fixas_fim_vigencia_exists = 0,
+    'ALTER TABLE rendas_fixas ADD COLUMN fim_vigencia DATE NULL AFTER inicio_vigencia',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_despesas_fixas_inicio_vigencia_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'despesas_fixas'
+      AND COLUMN_NAME = 'inicio_vigencia'
+);
+SET @sql := IF(@col_despesas_fixas_inicio_vigencia_exists = 0,
+    'ALTER TABLE despesas_fixas ADD COLUMN inicio_vigencia DATE NOT NULL DEFAULT ''2000-01-01'' AFTER dia_referencia',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @col_despesas_fixas_fim_vigencia_exists := (
+    SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'despesas_fixas'
+      AND COLUMN_NAME = 'fim_vigencia'
+);
+SET @sql := IF(@col_despesas_fixas_fim_vigencia_exists = 0,
+    'ALTER TABLE despesas_fixas ADD COLUMN fim_vigencia DATE NULL AFTER inicio_vigencia',
+    'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 SET @fk_rendas_tipo_exists := (
     SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS

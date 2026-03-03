@@ -1,18 +1,7 @@
-<?php
-$success = (string) ($flash['success'] ?? '');
-$error = (string) ($flash['error'] ?? '');
-?>
 <header class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
     <h1 class="text-2xl font-bold tracking-tight">Tipos de movimentacao</h1>
     <p class="mt-1 text-sm text-slate-600">Cadastre os tipos para usar em rendas e despesas.</p>
 </header>
-
-<?php if ($success !== ''): ?>
-    <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"><?= $e($success) ?></div>
-<?php endif; ?>
-<?php if ($error !== ''): ?>
-    <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"><?= $e($error) ?></div>
-<?php endif; ?>
 
 <section class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
     <h2 class="text-lg font-semibold">Novo tipo</h2>

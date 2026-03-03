@@ -18,6 +18,7 @@ final class View
             'title' => $title,
             'content' => $content,
             'basePath' => $basePath,
+            'flash' => is_array($data['flash'] ?? null) ? $data['flash'] : [],
         ];
 
         return self::renderLayout('layouts/app', $layoutData);
@@ -76,10 +77,27 @@ final class View
 
         $e = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
         $url = static fn (string $path = '/'): string => self::url((string) ($basePath ?? '/'), $path);
+        $dateBr = static function (mixed $value): string {
+            $raw = trim((string) $value);
+            if ($raw === '') {
+                return '';
+            }
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) === 1) {
+                $d = \DateTimeImmutable::createFromFormat('Y-m-d', $raw);
+                return $d instanceof \DateTimeImmutable ? $d->format('d/m/Y') : $raw;
+            }
+
+            $ts = strtotime($raw);
+            if ($ts === false) {
+                return $raw;
+            }
+
+            return date('d/m/Y', $ts);
+        };
 
         ob_start();
         require $path;
         return (string) ob_get_clean();
     }
 }
-

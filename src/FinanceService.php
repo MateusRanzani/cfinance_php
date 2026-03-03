@@ -13,13 +13,18 @@ final class FinanceService
     {
     }
 
-    public function buildDashboardData(array $viewer, int $targetUserId, int $year, int $month): array
+    public function buildDashboardData(array $viewer, int $targetUserId, int $year, int $month, ?string $startDate = null, ?string $endDate = null): array
     {
         $this->validateMonthYear($year, $month);
         $this->assertUserAccess($viewer, $targetUserId);
+        $resolvedStartDate = $this->resolveDateFilter($startDate);
+        $resolvedEndDate = $this->resolveDateFilter($endDate);
+        if ($resolvedStartDate !== null && $resolvedEndDate !== null && $resolvedStartDate > $resolvedEndDate) {
+            [$resolvedStartDate, $resolvedEndDate] = [$resolvedEndDate, $resolvedStartDate];
+        }
 
-        $incomes = $this->listIncomesForMonth($targetUserId, $year, $month);
-        $expenses = $this->listExpensesForMonth($targetUserId, $year, $month);
+        $incomes = $this->listIncomesForMonth($targetUserId, $year, $month, $resolvedStartDate, $resolvedEndDate);
+        $expenses = $this->listExpensesForMonth($targetUserId, $year, $month, $resolvedStartDate, $resolvedEndDate);
 
         $totals = [
             'income_planned' => $this->sumColumn($incomes, 'valor_planejado'),
@@ -31,7 +36,9 @@ final class FinanceService
         $totals['final_balance'] = $totals['income_real'] - $totals['expense_real'];
 
         $hasCurrentMonthData = $incomes !== [] || $expenses !== [];
-        $copySuggestion = $this->buildCopySuggestion($targetUserId, $year, $month, $hasCurrentMonthData);
+        $copySuggestion = ($resolvedStartDate === null && $resolvedEndDate === null)
+            ? $this->buildCopySuggestion($targetUserId, $year, $month, $hasCurrentMonthData)
+            : null;
 
         return [
             'incomes' => $incomes,
@@ -148,8 +155,8 @@ final class FinanceService
         $data = $this->validateFixedPayload($payload, 'renda');
 
         $query = $this->db->prepare(
-            'INSERT INTO rendas_fixas (usuario_id, descricao, valor_planejado, valor_real, tipo_id, dia_referencia)
-             VALUES (:usuario_id, :descricao, :valor_planejado, :valor_real, :tipo_id, :dia_referencia)'
+            'INSERT INTO rendas_fixas (usuario_id, descricao, valor_planejado, valor_real, tipo_id, dia_referencia, inicio_vigencia, fim_vigencia)
+             VALUES (:usuario_id, :descricao, :valor_planejado, :valor_real, :tipo_id, :dia_referencia, :inicio_vigencia, :fim_vigencia)'
         );
         $query->execute([
             'usuario_id' => $targetUserId,
@@ -158,6 +165,8 @@ final class FinanceService
             'valor_real' => $data['valor_real'],
             'tipo_id' => $data['tipo_id'],
             'dia_referencia' => $data['dia_referencia'],
+            'inicio_vigencia' => $data['inicio_vigencia'],
+            'fim_vigencia' => $data['fim_vigencia'],
         ]);
     }
 
@@ -175,8 +184,8 @@ final class FinanceService
         $data = $this->validateFixedPayload($payload, 'despesa');
 
         $query = $this->db->prepare(
-            'INSERT INTO despesas_fixas (usuario_id, descricao, valor_planejado, valor_real, tipo_id, dia_referencia)
-             VALUES (:usuario_id, :descricao, :valor_planejado, :valor_real, :tipo_id, :dia_referencia)'
+            'INSERT INTO despesas_fixas (usuario_id, descricao, valor_planejado, valor_real, tipo_id, dia_referencia, inicio_vigencia, fim_vigencia)
+             VALUES (:usuario_id, :descricao, :valor_planejado, :valor_real, :tipo_id, :dia_referencia, :inicio_vigencia, :fim_vigencia)'
         );
         $query->execute([
             'usuario_id' => $targetUserId,
@@ -185,6 +194,8 @@ final class FinanceService
             'valor_real' => $data['valor_real'],
             'tipo_id' => $data['tipo_id'],
             'dia_referencia' => $data['dia_referencia'],
+            'inicio_vigencia' => $data['inicio_vigencia'],
+            'fim_vigencia' => $data['fim_vigencia'],
         ]);
     }
 
@@ -200,9 +211,14 @@ final class FinanceService
     {
         $this->validateMonthYear($year, $month);
         $this->assertUserAccess($viewer, $targetUserId);
+        $monthStart = sprintf('%04d-%02d-01', $year, $month);
+        $monthEnd = (new DateTimeImmutable($monthStart))->format('Y-m-t');
 
         $incomeInserted = 0;
         foreach ($this->listFixedIncomes($targetUserId) as $item) {
+            if (!$this->isFixedActiveForMonth($item, $monthStart, $monthEnd)) {
+                continue;
+            }
             if ($this->existsIncomeFromFixedInMonth((int) $item['id'], $targetUserId, $year, $month)) {
                 continue;
             }
@@ -225,6 +241,9 @@ final class FinanceService
 
         $expenseInserted = 0;
         foreach ($this->listFixedExpenses($targetUserId) as $item) {
+            if (!$this->isFixedActiveForMonth($item, $monthStart, $monthEnd)) {
+                continue;
+            }
             if ($this->existsExpenseFromFixedInMonth((int) $item['id'], $targetUserId, $year, $month)) {
                 continue;
             }
@@ -335,29 +354,53 @@ final class FinanceService
         $delete->execute(['id' => $id]);
     }
 
-    private function listIncomesForMonth(int $userId, int $year, int $month): array
+    private function listIncomesForMonth(int $userId, int $year, int $month, ?string $startDate = null, ?string $endDate = null): array
     {
         $query = $this->db->prepare(
             'SELECT r.id, r.descricao, r.valor_planejado, r.valor_real, r.data_referencia, r.usuario_id, r.tipo_id, t.nome AS tipo_nome
              FROM rendas r
              LEFT JOIN tipos_movimentacao t ON t.id = r.tipo_id
-             WHERE r.usuario_id = :usuario_id AND YEAR(r.data_referencia) = :ano AND MONTH(r.data_referencia) = :mes
+             WHERE r.usuario_id = :usuario_id
+               AND YEAR(r.data_referencia) = :ano
+               AND MONTH(r.data_referencia) = :mes
+               AND (:data_inicio_null IS NULL OR r.data_referencia >= :data_inicio_cmp)
+               AND (:data_fim_null IS NULL OR r.data_referencia <= :data_fim_cmp)
              ORDER BY r.data_referencia ASC, r.id ASC'
         );
-        $query->execute(['usuario_id' => $userId, 'ano' => $year, 'mes' => $month]);
+        $query->execute([
+            'usuario_id' => $userId,
+            'ano' => $year,
+            'mes' => $month,
+            'data_inicio_null' => $startDate,
+            'data_inicio_cmp' => $startDate,
+            'data_fim_null' => $endDate,
+            'data_fim_cmp' => $endDate,
+        ]);
         return $query->fetchAll();
     }
 
-    private function listExpensesForMonth(int $userId, int $year, int $month): array
+    private function listExpensesForMonth(int $userId, int $year, int $month, ?string $startDate = null, ?string $endDate = null): array
     {
         $query = $this->db->prepare(
             'SELECT d.id, d.descricao, d.valor_planejado, d.valor_real, d.data_referencia, d.usuario_id, d.tipo_id, t.nome AS tipo_nome
              FROM despesas d
              LEFT JOIN tipos_movimentacao t ON t.id = d.tipo_id
-             WHERE d.usuario_id = :usuario_id AND YEAR(d.data_referencia) = :ano AND MONTH(d.data_referencia) = :mes
+             WHERE d.usuario_id = :usuario_id
+               AND YEAR(d.data_referencia) = :ano
+               AND MONTH(d.data_referencia) = :mes
+               AND (:data_inicio_null IS NULL OR d.data_referencia >= :data_inicio_cmp)
+               AND (:data_fim_null IS NULL OR d.data_referencia <= :data_fim_cmp)
              ORDER BY d.data_referencia ASC, d.id ASC'
         );
-        $query->execute(['usuario_id' => $userId, 'ano' => $year, 'mes' => $month]);
+        $query->execute([
+            'usuario_id' => $userId,
+            'ano' => $year,
+            'mes' => $month,
+            'data_inicio_null' => $startDate,
+            'data_inicio_cmp' => $startDate,
+            'data_fim_null' => $endDate,
+            'data_fim_cmp' => $endDate,
+        ]);
         return $query->fetchAll();
     }
 
@@ -477,7 +520,7 @@ final class FinanceService
     private function listFixedIncomes(int $userId): array
     {
         $query = $this->db->prepare(
-            'SELECT rf.id, rf.descricao, rf.valor_planejado, rf.valor_real, rf.tipo_id, rf.dia_referencia, rf.usuario_id, t.nome AS tipo_nome
+            'SELECT rf.id, rf.descricao, rf.valor_planejado, rf.valor_real, rf.tipo_id, rf.dia_referencia, rf.inicio_vigencia, rf.fim_vigencia, rf.usuario_id, t.nome AS tipo_nome
              FROM rendas_fixas rf
              LEFT JOIN tipos_movimentacao t ON t.id = rf.tipo_id
              WHERE rf.usuario_id = :usuario_id
@@ -490,7 +533,7 @@ final class FinanceService
     private function listFixedExpenses(int $userId): array
     {
         $query = $this->db->prepare(
-            'SELECT df.id, df.descricao, df.valor_planejado, df.valor_real, df.tipo_id, df.dia_referencia, df.usuario_id, t.nome AS tipo_nome
+            'SELECT df.id, df.descricao, df.valor_planejado, df.valor_real, df.tipo_id, df.dia_referencia, df.inicio_vigencia, df.fim_vigencia, df.usuario_id, t.nome AS tipo_nome
              FROM despesas_fixas df
              LEFT JOIN tipos_movimentacao t ON t.id = df.tipo_id
              WHERE df.usuario_id = :usuario_id
@@ -608,18 +651,58 @@ final class FinanceService
         }
 
         $typeId = (int) ($payload['tipo_id'] ?? 0);
-        $type = $this->requireMovementType($typeId);
-        if ($type['categoria'] !== $expectedCategory) {
-            throw new \RuntimeException('Tipo invalido para a categoria selecionada.');
+        $resolvedTypeId = null;
+        if ($typeId > 0) {
+            $type = $this->requireMovementType($typeId);
+            if ($type['categoria'] !== $expectedCategory) {
+                throw new \RuntimeException('Tipo invalido para a categoria selecionada.');
+            }
+            $resolvedTypeId = $typeId;
+        }
+
+        $startDate = (string) ($payload['inicio_vigencia'] ?? '');
+        if (!$this->validDate($startDate)) {
+            throw new \RuntimeException('Data de inicio da vigencia invalida.');
+        }
+
+        $endDateRaw = trim((string) ($payload['fim_vigencia'] ?? ''));
+        $endDate = null;
+        if ($endDateRaw !== '') {
+            if (!$this->validDate($endDateRaw)) {
+                throw new \RuntimeException('Data de fim da vigencia invalida.');
+            }
+            $endDate = $endDateRaw;
+        }
+
+        if ($endDate !== null && $endDate < $startDate) {
+            throw new \RuntimeException('Data de fim da vigencia deve ser igual ou posterior ao inicio.');
         }
 
         return [
             'descricao' => $description,
             'valor_planejado' => $planned,
             'valor_real' => $real,
-            'tipo_id' => $typeId,
+            'tipo_id' => $resolvedTypeId,
             'dia_referencia' => $day,
+            'inicio_vigencia' => $startDate,
+            'fim_vigencia' => $endDate,
         ];
+    }
+
+    private function isFixedActiveForMonth(array $fixedItem, string $monthStart, string $monthEnd): bool
+    {
+        $start = (string) ($fixedItem['inicio_vigencia'] ?? '');
+        $end = (string) ($fixedItem['fim_vigencia'] ?? '');
+
+        if ($start !== '' && $start > $monthEnd) {
+            return false;
+        }
+
+        if ($end !== '' && $end < $monthStart) {
+            return false;
+        }
+
+        return true;
     }
 
     private function validateEntryPayload(array $payload, string $expectedCategory): array
@@ -648,13 +731,14 @@ final class FinanceService
         }
 
         $typeId = (int) ($payload['tipo_id'] ?? 0);
-        if ($typeId <= 0) {
-            throw new \RuntimeException('Tipo obrigatorio.');
-        }
-        $type = $this->requireMovementType($typeId);
-        $expectedCategory = (string) ($payload['categoria_tipo'] ?? '');
-        if ($expectedCategory !== '' && $type['categoria'] !== $expectedCategory) {
-            throw new \RuntimeException('Tipo invalido para a categoria selecionada.');
+        $resolvedTypeId = null;
+        if ($typeId > 0) {
+            $type = $this->requireMovementType($typeId);
+            $expectedCategory = (string) ($payload['categoria_tipo'] ?? '');
+            if ($expectedCategory !== '' && $type['categoria'] !== $expectedCategory) {
+                throw new \RuntimeException('Tipo invalido para a categoria selecionada.');
+            }
+            $resolvedTypeId = $typeId;
         }
 
         return [
@@ -662,7 +746,7 @@ final class FinanceService
             'valor_planejado' => $planned,
             'valor_real' => $real,
             'data_referencia' => $referenceDate,
-            'tipo_id' => $typeId,
+            'tipo_id' => $resolvedTypeId,
         ];
     }
 
@@ -743,6 +827,16 @@ final class FinanceService
     {
         $d = DateTimeImmutable::createFromFormat('Y-m-d', $date);
         return $d !== false && $d->format('Y-m-d') === $date;
+    }
+
+    private function resolveDateFilter(?string $dateFilter): ?string
+    {
+        $raw = trim((string) $dateFilter);
+        if ($raw === '') {
+            return null;
+        }
+
+        return $this->validDate($raw) ? $raw : null;
     }
 
     private function validateMonthYear(int $year, int $month): void

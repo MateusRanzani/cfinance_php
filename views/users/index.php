@@ -1,22 +1,7 @@
-<?php
-$success = (string) ($flash['success'] ?? '');
-$error = (string) ($flash['error'] ?? '');
-?>
 <header class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
     <h1 class="text-2xl font-bold tracking-tight">Gestao de Usuarios</h1>
     <p class="mt-1 text-sm text-slate-600">Administrador logado: <?= $e($admin['name']) ?></p>
 </header>
-
-<?php if ($success !== ''): ?>
-    <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-        <?= $e($success) ?>
-    </div>
-<?php endif; ?>
-<?php if ($error !== ''): ?>
-    <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-        <?= $e($error) ?>
-    </div>
-<?php endif; ?>
 
 <section class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
     <h2 class="text-lg font-semibold">Criar usuario</h2>
@@ -52,21 +37,21 @@ $error = (string) ($flash['error'] ?? '');
 <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
     <h2 class="text-lg font-semibold">Usuarios cadastrados</h2>
     <p class="mt-1 text-xs text-slate-500">Para manter a senha atual, deixe o campo de senha em branco na edicao.</p>
-    <div class="mt-4 overflow-x-auto">
-        <table class="w-full min-w-[980px] border-collapse text-sm">
+    <div class="app-table-wrap mt-4">
+        <table class="app-table">
             <thead>
-                <tr class="border-b border-slate-200 text-left">
-                    <th class="p-2">Nome</th>
-                    <th class="p-2">E-mail</th>
-                    <th class="p-2">Senha</th>
-                    <th class="p-2">Perfil</th>
-                    <th class="p-2">Acoes</th>
+                <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Senha</th>
+                    <th>Perfil</th>
+                    <th>Acoes</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($users as $item): ?>
-                    <tr class="border-b border-slate-100 align-top">
-                        <td class="p-2" colspan="4">
+                    <tr>
+                        <td colspan="4">
                             <form method="post" action="<?= $url('/users/update') ?>" class="grid gap-2 md:grid-cols-4">
                                 <input type="hidden" name="csrf" value="<?= $e($csrf) ?>">
                                 <input type="hidden" name="user_id" value="<?= (int) $item['id'] ?>">
@@ -82,7 +67,7 @@ $error = (string) ($flash['error'] ?? '');
                                 </div>
                             </form>
                         </td>
-                        <td class="p-2">
+                        <td class="actions-cell">
                             <form method="post" action="<?= $url('/users/delete') ?>" onsubmit="return confirm('Excluir usuario?')">
                                 <input type="hidden" name="csrf" value="<?= $e($csrf) ?>">
                                 <input type="hidden" name="user_id" value="<?= (int) $item['id'] ?>">
