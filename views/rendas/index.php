@@ -57,8 +57,9 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-lg font-semibold">Lancamentos de renda</h2>
         <div class="flex flex-wrap items-center gap-2">
-            <button id="btn-adicionar-renda-linha" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" type="button">
-                Adicionar renda
+            <button id="btn-adicionar-renda-linha" class="icon-btn icon-btn--primary" type="button">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                <span class="icon-btn__text">Adicionar renda</span>
             </button>
             <form method="post" action="<?= $url('/fixos/aplicar') ?>">
                 <input type="hidden" name="csrf" value="<?= $e($csrf) ?>">
@@ -98,15 +99,19 @@
                         <td>R$ <?= number_format($diff, 2, ',', '.') ?></td>
                         <td class="actions-cell">
                             <div class="flex flex-wrap gap-2">
-                                <button class="btn-editar-renda rounded bg-slate-800 px-3 py-1 text-white hover:bg-slate-700" type="button">Editar</button>
+                                <button class="btn-editar-renda icon-btn icon-btn--neutral" type="button" aria-label="Editar renda" title="Editar renda">
+                                    <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                                </button>
                                 <form method="post" action="<?= $url('/rendas/delete') ?>" onsubmit="return confirm('Excluir renda?')">
                                     <input type="hidden" name="csrf" value="<?= $e($csrf) ?>">
                                     <input type="hidden" name="mes" value="<?= $e($mesSelecionado) ?>">
                                     <input type="hidden" name="data_inicio" value="<?= $e((string) ($dataInicioSelecionada ?? '')) ?>">
-                <input type="hidden" name="data_fim" value="<?= $e((string) ($dataFimSelecionada ?? '')) ?>">
+                                    <input type="hidden" name="data_fim" value="<?= $e((string) ($dataFimSelecionada ?? '')) ?>">
                                     <input type="hidden" name="destino" value="rendas">
                                     <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-                                    <button class="rounded bg-rose-600 px-3 py-1 text-white hover:bg-rose-500" type="submit">Excluir</button>
+                                    <button class="icon-btn icon-btn--danger" type="submit" aria-label="Excluir renda" title="Excluir renda">
+                                        <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                                    </button>
                                 </form>
                             </div>
                         </td>
@@ -156,8 +161,12 @@
                     <input type="hidden" name="data_inicio" value="<?= $e((string) ($dataInicioSelecionada ?? '')) ?>">
                 <input type="hidden" name="data_fim" value="<?= $e((string) ($dataFimSelecionada ?? '')) ?>">
                     <input type="hidden" name="destino" value="rendas">
-                    <button class="rounded bg-slate-800 px-3 py-1 text-white hover:bg-slate-700" type="submit">Salvar</button>
-                    <button class="rounded bg-rose-600 px-3 py-1 text-white hover:bg-rose-500 btn-cancel-nova-renda" type="button">Excluir</button>
+                    <button class="icon-btn icon-btn--neutral" type="submit" aria-label="Salvar nova renda" title="Salvar nova renda">
+                        <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                    </button>
+                    <button class="icon-btn icon-btn--danger btn-cancel-nova-renda" type="button" aria-label="Cancelar nova renda" title="Cancelar nova renda">
+                        <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                    </button>
                 </form>
             </td>
         </tr>
@@ -252,8 +261,12 @@
                 <input type="hidden" name="data_fim" value="<?= $e((string) ($dataFimSelecionada ?? '')) ?>">
                     <input type="hidden" name="destino" value="rendas">
                     <input type="hidden" name="id" value="${Number(row.dataset.id || 0)}">
-                    <button class="rounded bg-slate-800 px-3 py-1 text-white hover:bg-slate-700" type="submit">Salvar</button>
-                    <button class="btn-cancel-edicao-renda rounded bg-slate-200 px-3 py-1 text-slate-700 hover:bg-slate-300" type="button">Cancelar</button>
+                    <button class="icon-btn icon-btn--neutral" type="submit" aria-label="Salvar edicao de renda" title="Salvar edicao de renda">
+                        <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                    </button>
+                    <button class="btn-cancel-edicao-renda icon-btn icon-btn--muted" type="button" aria-label="Cancelar edicao de renda" title="Cancelar edicao de renda">
+                        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+                    </button>
                 </form>
             </td>
         `;
@@ -277,8 +290,9 @@
 <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <h2 class="text-lg font-semibold">Rendas fixas mensais</h2>
-        <button id="btn-adicionar-renda-fixa-linha" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" type="button">
-            Adicionar fixa
+        <button id="btn-adicionar-renda-fixa-linha" class="icon-btn icon-btn--primary" type="button">
+            <span class="material-symbols-rounded" aria-hidden="true">add</span>
+            <span class="icon-btn__text">Adicionar fixa</span>
         </button>
     </div>
     <div class="app-table-wrap mt-4">
@@ -307,7 +321,9 @@
                                 <input type="hidden" name="data_fim" value="<?= $e((string) ($dataFimSelecionada ?? '')) ?>">
                                 <input type="hidden" name="destino" value="rendas">
                                 <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-                                <button class="rounded bg-rose-600 px-3 py-1 text-white hover:bg-rose-500" type="submit">Excluir</button>
+                                <button class="icon-btn icon-btn--danger" type="submit" aria-label="Excluir renda fixa" title="Excluir renda fixa">
+                                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                                </button>
                             </form>
                         </td>
                     </tr>
@@ -338,8 +354,12 @@
                     <input type="hidden" name="data_inicio" value="<?= $e((string) ($dataInicioSelecionada ?? '')) ?>">
                     <input type="hidden" name="data_fim" value="<?= $e((string) ($dataFimSelecionada ?? '')) ?>">
                     <input type="hidden" name="destino" value="rendas">
-                    <button class="rounded bg-slate-800 px-3 py-1 text-white hover:bg-slate-700" type="submit">Salvar</button>
-                    <button class="btn-cancel-nova-renda-fixa rounded bg-slate-200 px-3 py-1 text-slate-700 hover:bg-slate-300" type="button">Cancelar</button>
+                    <button class="icon-btn icon-btn--neutral" type="submit" aria-label="Salvar renda fixa" title="Salvar renda fixa">
+                        <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                    </button>
+                    <button class="btn-cancel-nova-renda-fixa icon-btn icon-btn--muted" type="button" aria-label="Cancelar renda fixa" title="Cancelar renda fixa">
+                        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+                    </button>
                 </form>
             </td>
         </tr>
@@ -385,5 +405,3 @@
     });
 })();
 </script>
-
-

@@ -19,7 +19,10 @@
             <input class="w-full rounded-lg border border-slate-300 px-3 py-2" type="text" name="nome" placeholder="Ex.: Salario, Cartao, Aluguel" required>
         </label>
         <div class="md:col-span-3">
-            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" type="submit">Cadastrar tipo</button>
+            <button class="icon-btn icon-btn--primary" type="submit">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                <span class="icon-btn__text">Cadastrar tipo</span>
+            </button>
         </div>
     </form>
 </section>
@@ -38,12 +41,16 @@
                         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
                         <input type="hidden" name="categoria" value="renda">
                         <input class="rounded border border-slate-300 px-3 py-1 text-sm" type="text" name="nome" value="<?= $e($item['nome']) ?>" required>
-                        <button class="rounded bg-slate-800 px-3 py-1 text-sm text-white hover:bg-slate-700" type="submit">Salvar</button>
+                        <button class="icon-btn icon-btn--neutral" type="submit" aria-label="Editar tipo de renda" title="Editar tipo de renda">
+                            <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                        </button>
                     </form>
                     <form method="post" action="<?= $url('/tipos/delete') ?>" class="mt-2" onsubmit="return confirm('Excluir tipo?')">
                         <input type="hidden" name="csrf" value="<?= $e($csrf) ?>">
                         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-                        <button class="rounded bg-rose-600 px-3 py-1 text-sm text-white hover:bg-rose-500" type="submit">Excluir</button>
+                        <button class="icon-btn icon-btn--danger" type="submit" aria-label="Excluir tipo de renda" title="Excluir tipo de renda">
+                            <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                        </button>
                     </form>
                 </div>
             <?php endforeach; ?>
@@ -63,12 +70,16 @@
                         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
                         <input type="hidden" name="categoria" value="despesa">
                         <input class="rounded border border-slate-300 px-3 py-1 text-sm" type="text" name="nome" value="<?= $e($item['nome']) ?>" required>
-                        <button class="rounded bg-slate-800 px-3 py-1 text-sm text-white hover:bg-slate-700" type="submit">Salvar</button>
+                        <button class="icon-btn icon-btn--neutral" type="submit" aria-label="Editar tipo de despesa" title="Editar tipo de despesa">
+                            <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                        </button>
                     </form>
                     <form method="post" action="<?= $url('/tipos/delete') ?>" class="mt-2" onsubmit="return confirm('Excluir tipo?')">
                         <input type="hidden" name="csrf" value="<?= $e($csrf) ?>">
                         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
-                        <button class="rounded bg-rose-600 px-3 py-1 text-sm text-white hover:bg-rose-500" type="submit">Excluir</button>
+                        <button class="icon-btn icon-btn--danger" type="submit" aria-label="Excluir tipo de despesa" title="Excluir tipo de despesa">
+                            <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                        </button>
                     </form>
                 </div>
             <?php endforeach; ?>

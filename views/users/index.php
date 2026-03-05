@@ -27,8 +27,9 @@
             </select>
         </label>
         <div class="md:col-span-4">
-            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" type="submit">
-                Criar
+            <button class="icon-btn icon-btn--primary" type="submit">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+                <span class="icon-btn__text">Criar</span>
             </button>
         </div>
     </form>
@@ -63,7 +64,10 @@
                                     <option value="padrao" <?= $item['role'] === 'padrao' ? 'selected' : '' ?>>padrao</option>
                                 </select>
                                 <div class="md:col-span-4">
-                                    <button class="rounded-lg bg-slate-800 px-3 py-1 text-white hover:bg-slate-700" type="submit">Salvar alteracoes</button>
+                                    <button class="icon-btn icon-btn--neutral" type="submit">
+                                        <span class="material-symbols-rounded" aria-hidden="true">edit</span>
+                                        <span class="icon-btn__text">Salvar alteracoes</span>
+                                    </button>
                                 </div>
                             </form>
                         </td>
@@ -71,7 +75,9 @@
                             <form method="post" action="<?= $url('/users/delete') ?>" onsubmit="return confirm('Excluir usuario?')">
                                 <input type="hidden" name="csrf" value="<?= $e($csrf) ?>">
                                 <input type="hidden" name="user_id" value="<?= (int) $item['id'] ?>">
-                                <button class="rounded-lg bg-rose-600 px-3 py-1 text-white hover:bg-rose-500" type="submit">Excluir</button>
+                                <button class="icon-btn icon-btn--danger" type="submit" aria-label="Excluir usuario" title="Excluir usuario">
+                                    <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+                                </button>
                             </form>
                         </td>
                     </tr>

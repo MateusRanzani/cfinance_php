@@ -7,7 +7,53 @@
     <title><?= $e($title ?? 'Financas do Casal') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0">
     <style>
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.55rem;
+            color: #fff;
+            transition: background-color .15s ease;
+        }
+        .icon-btn--neutral {
+            background: #1e293b;
+        }
+        .icon-btn--neutral:hover {
+            background: #334155;
+        }
+        .icon-btn--danger {
+            background: #e11d48;
+        }
+        .icon-btn--danger:hover {
+            background: #f43f5e;
+        }
+        .icon-btn--primary {
+            background: #0f172a;
+        }
+        .icon-btn--primary:hover {
+            background: #334155;
+        }
+        .icon-btn--muted {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .icon-btn--muted:hover {
+            background: #cbd5e1;
+        }
+        .icon-btn__text {
+            font-size: 0.875rem;
+            font-weight: 600;
+            line-height: 1;
+        }
         .app-table-wrap {
             border: 1px solid #e2e8f0;
             border-radius: 0.75rem;
@@ -239,6 +285,23 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
     <script>
+        window.applyDateMask = function (input) {
+            if (!input || input.dataset.dateMaskBound === '1') return;
+            input.dataset.dateMaskBound = '1';
+            input.setAttribute('placeholder', 'dd/mm/aaaa');
+            input.addEventListener('input', function () {
+                var digits = this.value.replace(/\D/g, '').slice(0, 8);
+                if (digits.length > 4) {
+                    this.value = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+                    return;
+                }
+                if (digits.length > 2) {
+                    this.value = digits.slice(0, 2) + '/' + digits.slice(2);
+                    return;
+                }
+                this.value = digits;
+            });
+        };
         window.initDatePickers = function (root) {
             const scope = root || document;
             const inputs = scope.querySelectorAll('input[type="date"], input[data-datepicker="true"]');
@@ -249,7 +312,11 @@
                     dateFormat: 'Y-m-d',
                     altInput: true,
                     altFormat: 'd/m/Y',
-                    allowInput: true
+                    allowInput: true,
+                    onReady: function (selectedDates, dateStr, instance) {
+                        var visibleInput = instance.altInput || instance.input;
+                        window.applyDateMask(visibleInput);
+                    }
                 });
             });
         };
