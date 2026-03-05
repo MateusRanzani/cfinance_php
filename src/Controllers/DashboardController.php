@@ -28,6 +28,8 @@ final class DashboardController extends BaseController
             'totals' => $dashboard['totals'],
             'incomes' => $dashboard['incomes'],
             'expenses' => $dashboard['expenses'],
+            'fixedIncomesActive' => $dashboard['fixed_incomes_active'],
+            'fixedExpensesActive' => $dashboard['fixed_expenses_active'],
             'copySuggestion' => $dashboard['copy_suggestion'],
         ]);
     }
@@ -50,7 +52,7 @@ final class DashboardController extends BaseController
             'csrf' => $this->csrfToken(),
             'availableMonths' => $dashboard['available_months'],
             'incomes' => $dashboard['incomes'],
-            'fixedIncomes' => $dashboard['fixed_incomes'],
+            'fixedIncomes' => $dashboard['fixed_incomes_active'],
             'incomeTypes' => $dashboard['income_types'],
         ]);
     }
@@ -73,7 +75,7 @@ final class DashboardController extends BaseController
             'csrf' => $this->csrfToken(),
             'availableMonths' => $dashboard['available_months'],
             'expenses' => $dashboard['expenses'],
-            'fixedExpenses' => $dashboard['fixed_expenses'],
+            'fixedExpenses' => $dashboard['fixed_expenses_active'],
             'expenseTypes' => $dashboard['expense_types'],
         ]);
     }
@@ -100,11 +102,12 @@ final class DashboardController extends BaseController
         [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
+            $planned = (float) ($_POST['valor_planejado'] ?? 0);
             $this->finance->createIncome($user, $targetUserId, [
                 'descricao' => (string) ($_POST['descricao'] ?? ''),
                 'tipo_id' => (int) ($_POST['tipo_id'] ?? 0),
-                'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
-                'valor_real' => (float) ($_POST['valor_real'] ?? 0),
+                'valor_planejado' => $planned,
+                'valor_real' => $this->resolveRealValue($planned, $_POST['valor_real'] ?? null),
                 'data_referencia' => (string) ($_POST['data_referencia'] ?? ''),
             ]);
             $this->flash('success', 'Renda cadastrada.');
@@ -121,11 +124,12 @@ final class DashboardController extends BaseController
         [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
+            $planned = (float) ($_POST['valor_planejado'] ?? 0);
             $this->finance->updateIncome($user, (int) ($_POST['id'] ?? 0), [
                 'descricao' => (string) ($_POST['descricao'] ?? ''),
                 'tipo_id' => (int) ($_POST['tipo_id'] ?? 0),
-                'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
-                'valor_real' => (float) ($_POST['valor_real'] ?? 0),
+                'valor_planejado' => $planned,
+                'valor_real' => $this->resolveRealValue($planned, $_POST['valor_real'] ?? null),
                 'data_referencia' => (string) ($_POST['data_referencia'] ?? ''),
             ]);
             $this->flash('success', 'Renda atualizada.');
@@ -157,11 +161,12 @@ final class DashboardController extends BaseController
         [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
+            $planned = (float) ($_POST['valor_planejado'] ?? 0);
             $this->finance->createExpense($user, $targetUserId, [
                 'descricao' => (string) ($_POST['descricao'] ?? ''),
                 'tipo_id' => (int) ($_POST['tipo_id'] ?? 0),
-                'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
-                'valor_real' => (float) ($_POST['valor_real'] ?? 0),
+                'valor_planejado' => $planned,
+                'valor_real' => $this->resolveRealValue($planned, $_POST['valor_real'] ?? null),
                 'data_referencia' => (string) ($_POST['data_referencia'] ?? ''),
             ]);
             $this->flash('success', 'Despesa cadastrada.');
@@ -178,11 +183,12 @@ final class DashboardController extends BaseController
         [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
+            $planned = (float) ($_POST['valor_planejado'] ?? 0);
             $this->finance->updateExpense($user, (int) ($_POST['id'] ?? 0), [
                 'descricao' => (string) ($_POST['descricao'] ?? ''),
                 'tipo_id' => (int) ($_POST['tipo_id'] ?? 0),
-                'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
-                'valor_real' => (float) ($_POST['valor_real'] ?? 0),
+                'valor_planejado' => $planned,
+                'valor_real' => $this->resolveRealValue($planned, $_POST['valor_real'] ?? null),
                 'data_referencia' => (string) ($_POST['data_referencia'] ?? ''),
             ]);
             $this->flash('success', 'Despesa atualizada.');
@@ -229,11 +235,12 @@ final class DashboardController extends BaseController
         [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
+            $planned = (float) ($_POST['valor_planejado'] ?? 0);
             $this->finance->createFixedIncome($user, $targetUserId, [
                 'descricao' => (string) ($_POST['descricao'] ?? ''),
                 'tipo_id' => (int) ($_POST['tipo_id'] ?? 0),
-                'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
-                'valor_real' => (float) ($_POST['valor_real'] ?? 0),
+                'valor_planejado' => $planned,
+                'valor_real' => $this->resolveRealValue($planned, $_POST['valor_real'] ?? null),
                 'dia_referencia' => (int) ($_POST['dia_referencia'] ?? 1),
                 'inicio_vigencia' => (string) ($_POST['inicio_vigencia'] ?? ''),
                 'fim_vigencia' => (string) ($_POST['fim_vigencia'] ?? ''),
@@ -267,11 +274,12 @@ final class DashboardController extends BaseController
         [$user, $targetUserId, $year, $month, $startDate, $endDate] = $this->resolveContextFromPost();
 
         try {
+            $planned = (float) ($_POST['valor_planejado'] ?? 0);
             $this->finance->createFixedExpense($user, $targetUserId, [
                 'descricao' => (string) ($_POST['descricao'] ?? ''),
                 'tipo_id' => (int) ($_POST['tipo_id'] ?? 0),
-                'valor_planejado' => (float) ($_POST['valor_planejado'] ?? 0),
-                'valor_real' => (float) ($_POST['valor_real'] ?? 0),
+                'valor_planejado' => $planned,
+                'valor_real' => $this->resolveRealValue($planned, $_POST['valor_real'] ?? null),
                 'dia_referencia' => (int) ($_POST['dia_referencia'] ?? 1),
                 'inicio_vigencia' => (string) ($_POST['inicio_vigencia'] ?? ''),
                 'fim_vigencia' => (string) ($_POST['fim_vigencia'] ?? ''),
@@ -440,5 +448,14 @@ final class DashboardController extends BaseController
         }
 
         return $date;
+    }
+
+    private function resolveRealValue(float $planned, mixed $realRaw): float
+    {
+        if (!is_string($realRaw) || trim($realRaw) === '') {
+            return $planned;
+        }
+
+        return (float) $realRaw;
     }
 }

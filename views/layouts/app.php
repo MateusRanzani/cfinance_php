@@ -341,9 +341,75 @@
                 });
             });
         };
+        window.initPlannedRealAutofill = function () {
+            const debounceTimers = new WeakMap();
+            const getFieldByName = function (form, name) {
+                if (!form) return null;
+                let field = form.querySelector('input[name="' + name + '"]');
+                if (field) return field;
+                if (!form.id) return null;
+                field = document.querySelector('input[name="' + name + '"][form="' + form.id + '"]');
+                return field;
+            };
+            const resolveForm = function (input) {
+                if (!input) return null;
+                if (input.form) return input.form;
+                const formId = input.getAttribute('form');
+                if (!formId) return null;
+                return document.getElementById(formId);
+            };
+            const syncRealWithPlanned = function (form, force) {
+                if (!form) return;
+                const plannedInput = getFieldByName(form, 'valor_planejado');
+                const realInput = getFieldByName(form, 'valor_real');
+                if (!plannedInput || !realInput) return;
+                const isRealManual = realInput.dataset.realManual === '1';
+                if (force || !isRealManual || String(realInput.value || '').trim() === '') {
+                    realInput.value = plannedInput.value;
+                }
+            };
+
+            document.addEventListener('input', function (event) {
+                const target = event.target;
+                if (!(target instanceof HTMLInputElement)) return;
+                if (target.name === 'valor_real') {
+                    if (String(target.value || '').trim() === '') {
+                        delete target.dataset.realManual;
+                    } else {
+                        target.dataset.realManual = '1';
+                    }
+                    return;
+                }
+                if (target.name !== 'valor_planejado') return;
+                const form = resolveForm(target);
+                const existingTimer = debounceTimers.get(target);
+                if (existingTimer) {
+                    clearTimeout(existingTimer);
+                }
+                const timer = setTimeout(function () {
+                    syncRealWithPlanned(form, false);
+                }, 300);
+                debounceTimers.set(target, timer);
+            });
+
+            document.addEventListener('submit', function (event) {
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement)) return;
+                syncRealWithPlanned(form, false);
+            });
+        };
         document.addEventListener('DOMContentLoaded', function () {
             window.initDatePickers(document);
             window.initMonthPickers(document);
+            window.initPlannedRealAutofill();
+            document.addEventListener('change', function (event) {
+                const target = event.target;
+                if (!(target instanceof HTMLInputElement)) return;
+                if (!target.matches('input[data-month-picker="true"]')) return;
+                const form = target.closest('form');
+                if (!form) return;
+                form.submit();
+            });
         });
     </script>
 </body>

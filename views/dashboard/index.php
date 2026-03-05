@@ -37,6 +37,34 @@ $saldoStatus = $finalBalance > 0 ? 'Positivo' : ($finalBalance < 0 ? 'Negativo' 
 $saldoStatusClass = $finalBalance > 0 ? 'text-emerald-700' : ($finalBalance < 0 ? 'text-rose-700' : 'text-slate-600');
 $advancedFiltersAtivos = ((string) ($dataInicioSelecionada ?? '') !== '' || (string) ($dataFimSelecionada ?? '') !== '');
 ?>
+<style>
+    .dash-fixed-income-table {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+    }
+    .dash-fixed-income-table .app-table thead th {
+        background: #dcfce7;
+    }
+    .dash-fixed-income-table .app-table tbody tr:nth-child(even) td {
+        background: #f7fee7;
+    }
+    .dash-fixed-income-table .app-table tbody tr:hover td {
+        background: #dcfce7;
+    }
+    .dash-fixed-expense-table {
+        background: #fff7ed;
+        border-color: #fed7aa;
+    }
+    .dash-fixed-expense-table .app-table thead th {
+        background: #ffedd5;
+    }
+    .dash-fixed-expense-table .app-table tbody tr:nth-child(even) td {
+        background: #fffaf3;
+    }
+    .dash-fixed-expense-table .app-table tbody tr:hover td {
+        background: #ffedd5;
+    }
+</style>
 <section class="mb-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
     <div class="mb-4">
         <h1 class="text-2xl font-bold tracking-tight">Dashboard - <?= $e($mesAtualLabel) ?></h1>
@@ -44,7 +72,7 @@ $advancedFiltersAtivos = ((string) ($dataInicioSelecionada ?? '') !== '' || (str
     </div>
 
     <form method="get" action="<?= $url('/dashboard') ?>" class="space-y-3">
-        <div class="grid gap-3 md:grid-cols-4">
+        <div class="grid gap-3 md:grid-cols-3">
         <label class="block text-sm">
             <span class="mb-1 block font-medium text-slate-700">Mes</span>
             <input
@@ -55,9 +83,6 @@ $advancedFiltersAtivos = ((string) ($dataInicioSelecionada ?? '') !== '' || (str
                 class="w-full rounded-lg border border-slate-300 px-3 py-2"
             >
         </label>
-        <div class="flex items-end">
-            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" type="submit">Filtrar</button>
-        </div>
         </div>
         <details class="rounded-lg border border-slate-200 p-3" <?= $advancedFiltersAtivos ? 'open' : '' ?>>
             <summary class="cursor-pointer text-sm font-semibold text-slate-700">Filtros avancados</summary>
@@ -130,7 +155,33 @@ $advancedFiltersAtivos = ((string) ($dataInicioSelecionada ?? '') !== '' || (str
 
 <section class="grid gap-6 lg:grid-cols-2">
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h2 class="text-lg font-semibold">Despesas do mes</h2>
+        <h2 class="text-lg font-semibold">Despesas fixas vigentes no mes</h2>
+        <div class="app-table-wrap dash-fixed-expense-table mt-4">
+            <table class="app-table min-w-[420px]">
+                <thead>
+                    <tr>
+                        <th>Descricao</th>
+                        <th>Planejado</th>
+                        <th>Real</th>
+                        <th>Dia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (($fixedExpensesActive ?? []) === []): ?>
+                        <tr><td class="text-slate-500" colspan="4">Sem despesas fixas vigentes no mes.</td></tr>
+                    <?php endif; ?>
+                    <?php foreach (($fixedExpensesActive ?? []) as $item): ?>
+                        <tr>
+                            <td><?= $e((string) $item['descricao']) ?></td>
+                            <td>R$ <?= number_format((float) $item['valor_planejado'], 2, ',', '.') ?></td>
+                            <td>R$ <?= number_format((float) $item['valor_real'], 2, ',', '.') ?></td>
+                            <td><?= (int) $item['dia_referencia'] ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <h2 class="mt-6 text-lg font-semibold">Despesas do mes</h2>
         <div class="app-table-wrap app-table-wrap--plain mt-4">
             <table class="app-table min-w-[420px]">
                 <thead>
@@ -159,7 +210,33 @@ $advancedFiltersAtivos = ((string) ($dataInicioSelecionada ?? '') !== '' || (str
     </article>
 
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h2 class="text-lg font-semibold">Rendas do mes</h2>
+        <h2 class="text-lg font-semibold">Rendas fixas vigentes no mes</h2>
+        <div class="app-table-wrap dash-fixed-income-table mt-4">
+            <table class="app-table min-w-[420px]">
+                <thead>
+                    <tr>
+                        <th>Descricao</th>
+                        <th>Planejado</th>
+                        <th>Real</th>
+                        <th>Dia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (($fixedIncomesActive ?? []) === []): ?>
+                        <tr><td class="text-slate-500" colspan="4">Sem rendas fixas vigentes no mes.</td></tr>
+                    <?php endif; ?>
+                    <?php foreach (($fixedIncomesActive ?? []) as $item): ?>
+                        <tr>
+                            <td><?= $e((string) $item['descricao']) ?></td>
+                            <td>R$ <?= number_format((float) $item['valor_planejado'], 2, ',', '.') ?></td>
+                            <td>R$ <?= number_format((float) $item['valor_real'], 2, ',', '.') ?></td>
+                            <td><?= (int) $item['dia_referencia'] ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <h2 class="mt-6 text-lg font-semibold">Rendas do mes</h2>
         <div class="app-table-wrap app-table-wrap--plain mt-4">
             <table class="app-table min-w-[420px]">
                 <thead>

@@ -25,6 +25,10 @@ final class FinanceService
 
         $incomes = $this->listIncomesForMonth($targetUserId, $year, $month, $resolvedStartDate, $resolvedEndDate);
         $expenses = $this->listExpensesForMonth($targetUserId, $year, $month, $resolvedStartDate, $resolvedEndDate);
+        $fixedIncomes = $this->listFixedIncomes($targetUserId);
+        $fixedExpenses = $this->listFixedExpenses($targetUserId);
+        $monthStart = sprintf('%04d-%02d-01', $year, $month);
+        $monthEnd = (new DateTimeImmutable($monthStart))->format('Y-m-t');
 
         $totals = [
             'income_planned' => $this->sumColumn($incomes, 'valor_planejado'),
@@ -46,8 +50,10 @@ final class FinanceService
             'totals' => $totals,
             'available_months' => $this->listAvailableMonths($targetUserId, $year, $month),
             'copy_suggestion' => $copySuggestion,
-            'fixed_incomes' => $this->listFixedIncomes($targetUserId),
-            'fixed_expenses' => $this->listFixedExpenses($targetUserId),
+            'fixed_incomes' => $fixedIncomes,
+            'fixed_expenses' => $fixedExpenses,
+            'fixed_incomes_active' => $this->filterFixedActiveForMonth($fixedIncomes, $monthStart, $monthEnd),
+            'fixed_expenses_active' => $this->filterFixedActiveForMonth($fixedExpenses, $monthStart, $monthEnd),
             'income_types' => $this->listTypesByCategory('renda'),
             'expense_types' => $this->listTypesByCategory('despesa'),
         ];
@@ -703,6 +709,18 @@ final class FinanceService
         }
 
         return true;
+    }
+
+    private function filterFixedActiveForMonth(array $items, string $monthStart, string $monthEnd): array
+    {
+        $result = [];
+        foreach ($items as $item) {
+            if ($this->isFixedActiveForMonth($item, $monthStart, $monthEnd)) {
+                $result[] = $item;
+            }
+        }
+
+        return $result;
     }
 
     private function validateEntryPayload(array $payload, string $expectedCategory): array
