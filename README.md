@@ -51,6 +51,7 @@ composer run serve
 - Vigencia em fixos mensais com `inicio_vigencia` e `fim_vigencia` (opcional).
 - Cadastro de tipos de movimentacao (ex.: salario, venda, cartao, aluguel) na aba `Tipos`.
 - Vinculacao de tipo opcional em rendas e despesas (normais e fixas).
+- Metas financeiras com cadastro de objetivo, prazo, prioridade, progresso, projecao e aportes manuais (ex.: meta `Casamento`).
 
 ## Atualizando banco ja existente
 Se voce ja tinha o banco criado antes dessa funcionalidade, rode novamente:

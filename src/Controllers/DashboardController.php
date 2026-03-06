@@ -96,6 +96,23 @@ final class DashboardController extends BaseController
         ]);
     }
 
+    public function goalsPage(): void
+    {
+        [$user, $targetUserId, $year, $month, $selectedMonth] = $this->resolveContextFromRequest();
+        $goals = $this->finance->listGoals($user, $targetUserId);
+
+        $this->render('metas/index', [
+            'title' => 'Metas',
+            'activeMenu' => 'metas',
+            'user' => $user,
+            'targetUserId' => $targetUserId,
+            'mesSelecionado' => $selectedMonth,
+            'flash' => $this->consumeFlash(),
+            'csrf' => $this->csrfToken(),
+            'goals' => $goals,
+        ]);
+    }
+
     public function addIncome(): void
     {
         $this->verifyCsrf();
@@ -340,6 +357,63 @@ final class DashboardController extends BaseController
         $this->redirect('/tipos');
     }
 
+    public function addGoal(): void
+    {
+        $this->verifyCsrf();
+        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+
+        try {
+            $this->finance->createGoal($user, $targetUserId, [
+                'nome' => (string) ($_POST['nome'] ?? ''),
+                'descricao' => (string) ($_POST['descricao'] ?? ''),
+                'valor_alvo' => (float) ($_POST['valor_alvo'] ?? 0),
+                'valor_atual' => (float) ($_POST['valor_atual'] ?? 0),
+                'aporte_mensal_planejado' => (float) ($_POST['aporte_mensal_planejado'] ?? 0),
+                'prazo' => (string) ($_POST['prazo'] ?? ''),
+                'prioridade' => (string) ($_POST['prioridade'] ?? 'media'),
+            ]);
+            $this->flash('success', 'Meta cadastrada.');
+        } catch (\Throwable $exception) {
+            $this->flash('error', $exception->getMessage());
+        }
+
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'metas'), $year, $month, $targetUserId);
+    }
+
+    public function addGoalContribution(): void
+    {
+        $this->verifyCsrf();
+        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+
+        try {
+            $this->finance->addGoalContribution(
+                $user,
+                (int) ($_POST['id'] ?? 0),
+                (float) ($_POST['valor_aporte'] ?? 0)
+            );
+            $this->flash('success', 'Aporte registrado na meta.');
+        } catch (\Throwable $exception) {
+            $this->flash('error', $exception->getMessage());
+        }
+
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'metas'), $year, $month, $targetUserId);
+    }
+
+    public function deleteGoal(): void
+    {
+        $this->verifyCsrf();
+        [$user, $targetUserId, $year, $month] = $this->resolveContextFromPost();
+
+        try {
+            $this->finance->deleteGoal($user, (int) ($_POST['id'] ?? 0));
+            $this->flash('success', 'Meta removida.');
+        } catch (\Throwable $exception) {
+            $this->flash('error', $exception->getMessage());
+        }
+
+        $this->redirectByDestination((string) ($_POST['destino'] ?? 'metas'), $year, $month, $targetUserId);
+    }
+
     public function updateType(): void
     {
         $this->verifyCsrf();
@@ -424,6 +498,8 @@ final class DashboardController extends BaseController
             $path = '/rendas';
         } elseif ($destination === 'despesas') {
             $path = '/despesas';
+        } elseif ($destination === 'metas') {
+            $path = '/metas';
         }
 
         $query = '?mes=' . sprintf('%04d-%02d', $year, $month);

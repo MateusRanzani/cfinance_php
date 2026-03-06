@@ -50,6 +50,7 @@ final class AppKernel
         $this->router->get('/rendas', [$dashboardController, 'incomesPage']);
         $this->router->get('/despesas', [$dashboardController, 'expensesPage']);
         $this->router->get('/tipos', [$dashboardController, 'typesPage']);
+        $this->router->get('/metas', [$dashboardController, 'goalsPage']);
 
         $this->router->post('/rendas/add', [$dashboardController, 'addIncome']);
         $this->router->post('/rendas/update', [$dashboardController, 'updateIncome']);
@@ -69,6 +70,9 @@ final class AppKernel
         $this->router->post('/tipos/add', [$dashboardController, 'addType']);
         $this->router->post('/tipos/update', [$dashboardController, 'updateType']);
         $this->router->post('/tipos/delete', [$dashboardController, 'deleteType']);
+        $this->router->post('/metas/add', [$dashboardController, 'addGoal']);
+        $this->router->post('/metas/aporte', [$dashboardController, 'addGoalContribution']);
+        $this->router->post('/metas/delete', [$dashboardController, 'deleteGoal']);
 
         $this->router->get('/users', [$userController, 'index']);
         $this->router->post('/users/create', [$userController, 'create']);

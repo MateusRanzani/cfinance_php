@@ -247,6 +247,11 @@
                         class="block rounded-lg px-3 py-2 text-sm font-semibold <?= $isActive('tipos', '/tipos') ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100' ?>">
                         Tipos
                     </a>
+                    <a
+                        href="<?= $url('/metas') ?>"
+                        class="block rounded-lg px-3 py-2 text-sm font-semibold <?= $isActive('metas', '/metas') ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100' ?>">
+                        Metas
+                    </a>
                     <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
                         <a
                             href="<?= $url('/users') ?>"

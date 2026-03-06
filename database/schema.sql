@@ -87,6 +87,22 @@ CREATE TABLE IF NOT EXISTS despesas_fixas (
     CONSTRAINT fk_despesas_fixas_tipo FOREIGN KEY (tipo_id) REFERENCES tipos_movimentacao(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS metas_financeiras (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT UNSIGNED NOT NULL,
+    nome VARCHAR(120) NOT NULL,
+    descricao VARCHAR(255) NULL,
+    valor_alvo DECIMAL(12,2) NOT NULL,
+    valor_atual DECIMAL(12,2) NOT NULL DEFAULT 0,
+    aporte_mensal_planejado DECIMAL(12,2) NOT NULL DEFAULT 0,
+    prazo DATE NOT NULL,
+    prioridade ENUM('alta', 'media', 'baixa') NOT NULL DEFAULT 'media',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_metas_usuario_prazo (usuario_id, prazo),
+    CONSTRAINT fk_metas_usuario FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- Compatibilidade para bancos ja existentes
 SET @col_rendas_tipo_exists := (
     SELECT COUNT(*) FROM information_schema.COLUMNS

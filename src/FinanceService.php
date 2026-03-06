@@ -360,6 +360,78 @@ final class FinanceService
         $delete->execute(['id' => $id]);
     }
 
+    public function listGoals(array $viewer, int $targetUserId): array
+    {
+        $this->assertUserAccess($viewer, $targetUserId);
+        $query = $this->db->prepare(
+            'SELECT id, usuario_id, nome, descricao, valor_alvo, valor_atual, aporte_mensal_planejado, prazo, prioridade, created_at, updated_at
+             FROM metas_financeiras
+             WHERE usuario_id = :usuario_id
+             ORDER BY prazo ASC, id ASC'
+        );
+        $query->execute(['usuario_id' => $targetUserId]);
+        $goals = $query->fetchAll();
+
+        $result = [];
+        foreach ($goals as $goal) {
+            $result[] = $this->enrichGoal($goal);
+        }
+
+        return $result;
+    }
+
+    public function createGoal(array $viewer, int $targetUserId, array $payload): void
+    {
+        $this->assertUserAccess($viewer, $targetUserId);
+        $data = $this->validateGoalPayload($payload);
+
+        $query = $this->db->prepare(
+            'INSERT INTO metas_financeiras
+                (usuario_id, nome, descricao, valor_alvo, valor_atual, aporte_mensal_planejado, prazo, prioridade)
+             VALUES
+                (:usuario_id, :nome, :descricao, :valor_alvo, :valor_atual, :aporte_mensal_planejado, :prazo, :prioridade)'
+        );
+        $query->execute([
+            'usuario_id' => $targetUserId,
+            'nome' => $data['nome'],
+            'descricao' => $data['descricao'],
+            'valor_alvo' => $data['valor_alvo'],
+            'valor_atual' => $data['valor_atual'],
+            'aporte_mensal_planejado' => $data['aporte_mensal_planejado'],
+            'prazo' => $data['prazo'],
+            'prioridade' => $data['prioridade'],
+        ]);
+    }
+
+    public function addGoalContribution(array $viewer, int $goalId, float $amount): void
+    {
+        if ($amount <= 0) {
+            throw new \RuntimeException('Informe um valor de aporte maior que zero.');
+        }
+
+        $goal = $this->requireGoal($goalId);
+        $this->assertUserAccess($viewer, (int) $goal['usuario_id']);
+
+        $query = $this->db->prepare(
+            'UPDATE metas_financeiras
+             SET valor_atual = valor_atual + :amount, updated_at = NOW()
+             WHERE id = :id'
+        );
+        $query->execute([
+            'amount' => $amount,
+            'id' => $goalId,
+        ]);
+    }
+
+    public function deleteGoal(array $viewer, int $goalId): void
+    {
+        $goal = $this->requireGoal($goalId);
+        $this->assertUserAccess($viewer, (int) $goal['usuario_id']);
+
+        $query = $this->db->prepare('DELETE FROM metas_financeiras WHERE id = :id');
+        $query->execute(['id' => $goalId]);
+    }
+
     private function listIncomesForMonth(int $userId, int $year, int $month, ?string $startDate = null, ?string $endDate = null): array
     {
         $query = $this->db->prepare(
@@ -383,6 +455,99 @@ final class FinanceService
             'data_fim_cmp' => $endDate,
         ]);
         return $query->fetchAll();
+    }
+
+    private function requireGoal(int $id): array
+    {
+        $query = $this->db->prepare('SELECT * FROM metas_financeiras WHERE id = :id LIMIT 1');
+        $query->execute(['id' => $id]);
+        $goal = $query->fetch();
+        if (!$goal) {
+            throw new \RuntimeException('Meta nao encontrada.');
+        }
+
+        return $goal;
+    }
+
+    private function validateGoalPayload(array $payload): array
+    {
+        $name = substr(trim((string) ($payload['nome'] ?? '')), 0, 120);
+        if ($name === '') {
+            throw new \RuntimeException('Nome da meta obrigatorio.');
+        }
+
+        $descriptionRaw = trim((string) ($payload['descricao'] ?? ''));
+        $description = $descriptionRaw === '' ? null : substr($descriptionRaw, 0, 255);
+
+        $targetValue = (float) ($payload['valor_alvo'] ?? 0);
+        if ($targetValue <= 0) {
+            throw new \RuntimeException('Valor alvo deve ser maior que zero.');
+        }
+
+        $currentValue = (float) ($payload['valor_atual'] ?? 0);
+        if ($currentValue < 0) {
+            throw new \RuntimeException('Valor atual nao pode ser negativo.');
+        }
+
+        $plannedMonthly = (float) ($payload['aporte_mensal_planejado'] ?? 0);
+        if ($plannedMonthly < 0) {
+            throw new \RuntimeException('Aporte mensal planejado nao pode ser negativo.');
+        }
+
+        $dueDate = trim((string) ($payload['prazo'] ?? ''));
+        if (!$this->validDate($dueDate)) {
+            throw new \RuntimeException('Prazo da meta invalido.');
+        }
+
+        $priority = trim((string) ($payload['prioridade'] ?? 'media'));
+        if (!in_array($priority, ['alta', 'media', 'baixa'], true)) {
+            throw new \RuntimeException('Prioridade invalida.');
+        }
+
+        return [
+            'nome' => $name,
+            'descricao' => $description,
+            'valor_alvo' => $targetValue,
+            'valor_atual' => $currentValue,
+            'aporte_mensal_planejado' => $plannedMonthly,
+            'prazo' => $dueDate,
+            'prioridade' => $priority,
+        ];
+    }
+
+    private function enrichGoal(array $goal): array
+    {
+        $target = max(0.01, (float) ($goal['valor_alvo'] ?? 0));
+        $current = max(0.0, (float) ($goal['valor_atual'] ?? 0));
+        $plannedMonthly = max(0.0, (float) ($goal['aporte_mensal_planejado'] ?? 0));
+        $remaining = max(0.0, $target - $current);
+        $progress = min(100.0, ($current / $target) * 100);
+        $dueDate = (string) ($goal['prazo'] ?? '');
+        $today = (new DateTimeImmutable('today'))->format('Y-m-d');
+
+        $status = 'Em andamento';
+        if ($current >= $target) {
+            $status = 'Concluida';
+        } elseif ($dueDate !== '' && $dueDate < $today) {
+            $status = 'Atrasada';
+        }
+
+        $projectedDate = null;
+        if ($remaining <= 0.0) {
+            $projectedDate = $today;
+        } elseif ($plannedMonthly > 0.0) {
+            $months = (int) ceil($remaining / $plannedMonthly);
+            $projectedDate = (new DateTimeImmutable('today'))
+                ->modify('+' . $months . ' month')
+                ->format('Y-m-d');
+        }
+
+        $goal['valor_faltante'] = $remaining;
+        $goal['percentual_concluido'] = round($progress, 2);
+        $goal['status'] = $status;
+        $goal['projecao_conclusao'] = $projectedDate;
+
+        return $goal;
     }
 
     private function listExpensesForMonth(int $userId, int $year, int $month, ?string $startDate = null, ?string $endDate = null): array
